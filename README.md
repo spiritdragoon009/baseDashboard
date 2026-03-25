@@ -1,12 +1,12 @@
 Description
-Provide a monitoring Dashboard for Repo Admins with last run, success rate, and alerts; send email alerts for failures (after retries), enabling quick remediation. (Monitoring & alerts)
+Allow Repo Admins to provision and manage client repository instances, scoping them to selected authorities/data sources so client users see only their corpus. (Client management & scoping)
 
 User Story
-As a Repo Admin, I want to monitor extraction health with alerts for failures so that I ensure system reliability.
+As a Repo Admin, I want to manage client repository instances so that each client has properly configured access.
 
 UI Requirements
 
-Repo Admin Console → Dashboard: Health indicators, Last run summary, Alerts panel.
+Client Management tab with instance list (Client Name, Authorities enabled, Status, Last Modified) and Create/Edit flow.
 
 Functional Requirements
 
@@ -16,53 +16,29 @@ Requirement
 
 Details
 
-FR-112.1
+FR-113.1
 
-Health Dashboard
+Authority Scoping
 
-Display overall extraction system health: sources online vs. offline, last successful run per source, aggregate success rate
+Each client instance is scoped to specific Regulatory Authorities (e.g., FDA + EMA only); determines what articles flow to their product layer
 
-FR-112.2
+FR-113.2
 
-Run Statistics
+Client Admin Linkage
 
-Show last run summary: total articles extracted, new vs. duplicate, extraction duration, errors encountered
+Each instance linked to one or more Client Admin users who can manage that client's product layer
 
-FR-112.3
+FR-113.3
 
-Failure Tracking
+Multi-Authority Support
 
-Track consecutive failures per source; differentiate between temporary (network) and persistent (site structure change) failures
+Client can have multiple authorities enabled; new authorities can be added post-creation
 
-FR-112.4
+FR-113.4
 
-Automatic Retry
+Audit Trail
 
-System automatically retries failed extractions (configurable: default 3 retries with exponential backoff)
-
-FR-112.5
-
-Email Alerts
-
-Send email to Repo Admin after configurable failure threshold (default: 3 consecutive failures for same source)
-
-FR-112.6
-
-Alert Management
-
-In-app alerts panel showing active alerts; ability to acknowledge/dismiss alerts
-
-FR-112.7
-
-Trend Analysis
-
-Show failure trends over time (daily/weekly) to identify degrading sources
-
-FR-112.8
-
-Audit Trail Integration
-
-All extraction events (success, failure, retry) logged in Repo Admin audit trail (BPR_77)
+All instance changes logged with actor, timestamp, before/after values
 
 Acceptance Criteria
 
@@ -74,99 +50,99 @@ When
 
 Then
 
-AC-112.1
+AC-113.1
 
-Repo Admin opens Dashboard
+Repo Admin is on Client Management tab
 
-Dashboard loads
+Admin views the table
 
-Health summary visible: "15/16 sources healthy", last run timestamp, total articles in last 24h
+Columns displayed: Client Name, Authorities Enabled, Status, Client Admin(s), Created Date, Last Modified, Actions
 
-AC-112.2
+AC-113.2
 
-Dashboard displays Last Run summary
+Repo Admin clicks "Create Instance"
 
-Admin views details
+Create form opens
 
-Shows: Articles Extracted (150), New Articles (45), Duplicates Skipped (105), Errors (3), Duration (12 min)
+Fields: Client Name (required, unique), Authorities (multi-select from Repo Admin's geography list), Primary Client Admin Email, Status (default Active)
 
-AC-112.3
+AC-113.3
 
-FDA source failed extraction
+Repo Admin selects FDA and EMA for new client "PharmaCo"
 
-Failure is first occurrence
+Admin saves
 
-Status shows "1 failure"; retry scheduled automatically; no email sent yet
+Instance created; only articles from FDA and EMA sources will be visible to PharmaCo users
 
-AC-112.4
+AC-113.4
 
-FDA source fails 3 consecutive times
+Client instance "PharmaCo" is created
 
-Third failure detected
+Client Admin from PharmaCo logs in
 
-Email alert sent to Repo Admin with: Source URL, Error message, Failure timestamps, "Action Required" flag
+Client Admin sees only articles from FDA/EMA; cannot access MHRA/TGA articles
 
-AC-112.5
+AC-113.5
 
-Repo Admin receives alert email
+PharmaCo wants to add MHRA to their scope
 
-Email content checked
+Repo Admin edits instance, adds MHRA
 
-Includes: Subject "Extraction Alert: FDA Source Failed", body has source details, link to dashboard, suggested actions
+Future MHRA articles appear in PharmaCo's queue; existing MHRA articles (if any in repo) do not backfill
 
-AC-112.6
+AC-113.6
 
-Dashboard shows active alerts
+Client "BioTech Inc" has active articles in review
 
-Admin views Alerts panel
+Repo Admin attempts to delete instance
 
-List shows: Source name, Failure count, First failure time, Last failure time, Acknowledge button
+Deletion blocked: "Cannot delete client with active articles. Set to Suspended or wait for completion."
 
-AC-112.7
+AC-113.7
 
-Repo Admin acknowledges alert
+Repo Admin sets "BioTech Inc" to Suspended
 
-Admin clicks Acknowledge
+Status saved
 
-Alert moves to "Acknowledged" state; remains visible until source recovers or is disabled
+BioTech users can still access existing articles and complete reviews; no new articles routed to them
 
-AC-112.8
+AC-113.8
 
-EMA source structure changed (persistent failure)
+Client instance created with Primary Client Admin email
 
-Multiple days of failures
+Instance activated
 
-Alert escalates: "Persistent Failure - Site structure may have changed. Manual investigation required."
+Activation email sent to Client Admin with login instructions; Client Admin can access their scoped product layer
 
-AC-112.9
+AC-113.9
 
-Source recovers after failures
+Client instance has 2 Client Admins
 
-Next extraction succeeds
+Repo Admin views instance
 
-Alert auto-clears; recovery logged; success rate recalculates
+Both admins listed; either can be removed (minimum 1 required)
 
-AC-112.10
+AC-113.10
 
-Repo Admin wants to see failure trends
+Repo Admin edits PharmaCo to remove FDA scope
 
-Admin views trend chart
+Warning displayed
 
-Shows daily success/failure counts for past 30 days; highlights sources with degrading reliability
+"PharmaCo has 45 FDA articles in progress. Removing FDA will not affect these articles but will stop new FDA articles."
 
-AC-112.11
+AC-113.11
 
-Extraction completes (success or failure)
+New client instance "MedDevice Ltd" created
 
-Event logged
+Client Admin configures teams
 
-Entry appears in Repo Admin audit trail with: timestamp, source URL, articles extracted, parsing results, errors (SR_7)
+Teams can only select from authorities enabled for that instance (FDA/EMA if that's what's scoped)
 
-AC-112.12
+AC-113.12
 
-Repo Admin configures alert threshold
+Instance status changed
 
-Admin sets threshold to 5
+Audit trail checked
 
-Future alerts only trigger after 5 consecutive failures for same source
+Entry shows: Repo Admin user, action, previous state, new state, timestamp
 
