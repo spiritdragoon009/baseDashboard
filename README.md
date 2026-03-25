@@ -1,12 +1,12 @@
 Description
-Allow Repo Admins to view and modify Type of Update keywords/patterns so classification rules stay current; changes apply to future extractions only. (Type definitions)
+Provide a monitoring Dashboard for Repo Admins with last run, success rate, and alerts; send email alerts for failures (after retries), enabling quick remediation. (Monitoring & alerts)
 
 User Story
-As a Repo Admin, I want to view and modify Type of Update definitions so that classification rules stay current.
+As a Repo Admin, I want to monitor extraction health with alerts for failures so that I ensure system reliability.
 
 UI Requirements
 
-Type Definitions tab: table (Type Name, Keywords Count, Articles Tagged, Last Modified) and Edit drawer to add/remove keywords/patterns.
+Repo Admin Console → Dashboard: Health indicators, Last run summary, Alerts panel.
 
 Functional Requirements
 
@@ -16,29 +16,53 @@ Requirement
 
 Details
 
-FR-111.1
+FR-112.1
 
-Type Definition CRUD
+Health Dashboard
 
-Create, Read, Update, Delete Type of Update definitions (e.g., Safety, GMP/GDP, Clinical Labelling, Marketing Authorizations, etc.)
+Display overall extraction system health: sources online vs. offline, last successful run per source, aggregate success rate
 
-FR-111.2
+FR-112.2
 
-Keyword/Pattern Management
+Run Statistics
 
-Each Type has associated keywords and regex patterns used to classify extracted articles
+Show last run summary: total articles extracted, new vs. duplicate, extraction duration, errors encountered
 
-FR-111.3
+FR-112.3
 
-Prospective Application
+Failure Tracking
 
-Changes to Type definitions apply only to future extractions; existing articles retain their original classification
+Track consecutive failures per source; differentiate between temporary (network) and persistent (site structure change) failures
 
-FR-111.4
+FR-112.4
 
-Usage Tracking
+Automatic Retry
 
-System tracks how many articles are tagged with each Type to help Repo Admin understand classification coverage
+System automatically retries failed extractions (configurable: default 3 retries with exponential backoff)
+
+FR-112.5
+
+Email Alerts
+
+Send email to Repo Admin after configurable failure threshold (default: 3 consecutive failures for same source)
+
+FR-112.6
+
+Alert Management
+
+In-app alerts panel showing active alerts; ability to acknowledge/dismiss alerts
+
+FR-112.7
+
+Trend Analysis
+
+Show failure trends over time (daily/weekly) to identify degrading sources
+
+FR-112.8
+
+Audit Trail Integration
+
+All extraction events (success, failure, retry) logged in Repo Admin audit trail (BPR_77)
 
 Acceptance Criteria
 
@@ -50,78 +74,99 @@ When
 
 Then
 
-AC-111.1
+AC-112.1
 
-Repo Admin is on Type Definitions tab
+Repo Admin opens Dashboard
 
-Admin views the table
+Dashboard loads
 
-Columns displayed: Type Name, Keywords Count, Articles Tagged, Last Modified, Actions (Edit)
+Health summary visible: "15/16 sources healthy", last run timestamp, total articles in last 24h
 
-AC-111.2
+AC-112.2
 
-Types include Safety, GMP/GDP, Clinical Labelling, Marketing Authorizations, Fees, DMF, CMC, Safety Timelines
+Dashboard displays Last Run summary
 
-Admin views table
+Admin views details
 
-All standard Types listed; system prevents deletion of core Types
+Shows: Articles Extracted (150), New Articles (45), Duplicates Skipped (105), Errors (3), Duration (12 min)
 
-AC-111.3
+AC-112.3
 
-Repo Admin clicks Edit on "Safety" Type
+FDA source failed extraction
 
-Edit drawer opens
+Failure is first occurrence
 
-Shows current keywords/patterns list; Add/Remove capabilities; keyword examples shown
+Status shows "1 failure"; retry scheduled automatically; no email sent yet
 
-AC-111.4
+AC-112.4
 
-Repo Admin adds keyword "adverse event reporting" to Safety Type
+FDA source fails 3 consecutive times
 
-Admin saves
+Third failure detected
 
-Keyword added; Last Modified updates to current timestamp; audit trail records the change
+Email alert sent to Repo Admin with: Source URL, Error message, Failure timestamps, "Action Required" flag
 
-AC-111.5
+AC-112.5
 
-Repo Admin adds keyword "pharmacovigilance" which exists in Safety Timelines
+Repo Admin receives alert email
 
-System validates
+Email content checked
 
-Warning shown: "This keyword also exists in Safety Timelines Type. Articles may match multiple Types."; Admin can proceed or cancel
+Includes: Subject "Extraction Alert: FDA Source Failed", body has source details, link to dashboard, suggested actions
 
-AC-111.6
+AC-112.6
 
-Type definition is updated
+Dashboard shows active alerts
 
-Next extraction runs
+Admin views Alerts panel
 
-New articles are classified using updated keywords; existing articles unchanged
+List shows: Source name, Failure count, First failure time, Last failure time, Acknowledge button
 
-AC-111.7
+AC-112.7
 
-Repo Admin views Safety Type (100 articles tagged)
+Repo Admin acknowledges alert
 
-Admin removes keyword "ADR"
+Admin clicks Acknowledge
 
-Warning: "This keyword matches 15 existing articles. Future articles will not be tagged with this keyword. Existing tags remain."
+Alert moves to "Acknowledged" state; remains visible until source recovers or is disabled
 
-AC-111.8
+AC-112.8
 
-Client team is configured to monitor "Safety" Type
+EMA source structure changed (persistent failure)
 
-Type definition is updated
+Multiple days of failures
 
-Team continues receiving articles; new keywords expand what matches "Safety" for future extractions
+Alert escalates: "Persistent Failure - Site structure may have changed. Manual investigation required."
 
-AC-111.9
+AC-112.9
 
-Repo Admin wants to create new Type "Post-Market Surveillance"
+Source recovers after failures
 
-Admin clicks Create
+Next extraction succeeds
 
-Form allows: Type Name (unique), Keywords (min 1 required), Description; saved Type becomes available for team monitoring config
+Alert auto-clears; recovery logged; success rate recalculates
 
-@Vishal N Attaching the Screen UI, Please add your comments.
+AC-112.10
 
+Repo Admin wants to see failure trends
+
+Admin views trend chart
+
+Shows daily success/failure counts for past 30 days; highlights sources with degrading reliability
+
+AC-112.11
+
+Extraction completes (success or failure)
+
+Event logged
+
+Entry appears in Repo Admin audit trail with: timestamp, source URL, articles extracted, parsing results, errors (SR_7)
+
+AC-112.12
+
+Repo Admin configures alert threshold
+
+Admin sets threshold to 5
+
+Future alerts only trigger after 5 consecutive failures for same source
 
