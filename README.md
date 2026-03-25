@@ -1,148 +1,82 @@
 Description
-Allow Repo Admins to provision and manage client repository instances, scoping them to selected authorities/data sources so client users see only their corpus. (Client management & scoping)
+
+Automatically classify each extracted article into one or more Type of Update categories so downstream users can filter and route content efficiently. The system must support multi‑tagging because articles can span multiple categories (e.g., Safety + Clinical Labelling). The nine categories are: Clinical Labelling, Clinical Trials, Drug Master File (DMF), Fees, GMP/GDP, Marketing Authorizations, Safety, Safety Timelines, CMC.
 
 User Story
-As a Repo Admin, I want to manage client repository instances so that each client has properly configured access.
+
+As a Repo Admin, I want articles automatically tagged with Type of Update categories (supporting multiple tags) so that articles are classified without manual effort.
 
 UI Requirements
 
-Client Management tab with instance list (Client Name, Authorities enabled, Status, Last Modified) and Create/Edit flow.
+Article Display shows Type badges (colored) for all matched categories.
+
+Type Management (admin) provides visibility into Articles Tagged per type for monitoring.
 
 Functional Requirements
 
-FR ID
+Classify against 9 Types listed above; not mutually exclusive (multi‑tag support). (FR‑01)
 
-Requirement
-
-Details
-
-FR-113.1
-
-Authority Scoping
-
-Each client instance is scoped to specific Regulatory Authorities (e.g., FDA + EMA only); determines what articles flow to their product layer
-
-FR-113.2
-
-Client Admin Linkage
-
-Each instance linked to one or more Client Admin users who can manage that client's product layer
-
-FR-113.3
-
-Multi-Authority Support
-
-Client can have multiple authorities enabled; new authorities can be added post-creation
-
-FR-113.4
-
-Audit Trail
-
-All instance changes logged with actor, timestamp, before/after values
+Use stored keywords/patterns to assign tags during ingestion/classification. (see Type definitions section)
 
 Acceptance Criteria
 
-ID
+AC 1: Assign Multiple Type Tags to Single Article
 
-Given
+Given an article contains keywords for "Safety" and "Clinical Labelling"
+When classification runs during ingestion
+Then:
 
-When
+Article is tagged with both "Safety" AND "Clinical Labelling"
 
-Then
+Article Display shows both Type badges
 
-AC-113.1
+Article appears in filters for both categories
 
-Repo Admin is on Client Management tab
+AC 2: Classify Against All 9 Types
 
-Admin views the table
+Given an article is extracted
+When classification engine processes it
+Then:
 
-Columns displayed: Client Name, Authorities Enabled, Status, Client Admin(s), Created Date, Last Modified, Actions
+System evaluates against all 9 types: Clinical Labelling, Clinical Trials, DMF, Fees, GMP/GDP, Marketing Authorizations, Safety, Safety Timelines, CMC
 
-AC-113.2
+All matching types are assigned as tags
 
-Repo Admin clicks "Create Instance"
+Non-matching types are not assigned
 
-Create form opens
+AC 3: Handle Article with No Matching Types
 
-Fields: Client Name (required, unique), Authorities (multi-select from Repo Admin's geography list), Primary Client Admin Email, Status (default Active)
+Given an article contains no keywords matching any Type definition
+When classification runs
+Then:
 
-AC-113.3
+Article is stored with zero Type tags
 
-Repo Admin selects FDA and EMA for new client "PharmaCo"
+Article Display shows "Unclassified" or no Type badges
 
-Admin saves
+Article appears in "Unclassified" filter view
 
-Instance created; only articles from FDA and EMA sources will be visible to PharmaCo users
+AC 4: Display Type Badges with Color Coding
 
-AC-113.4
+Given an article tagged with "Safety" and "GMP/GDP"
+When I view the article in Article Display
+Then:
 
-Client instance "PharmaCo" is created
+"Safety" badge appears with designated color (e.g., red)
 
-Client Admin from PharmaCo logs in
+"GMP/GDP" badge appears with designated color (e.g., blue)
 
-Client Admin sees only articles from FDA/EMA; cannot access MHRA/TGA articles
+Badges are visually distinct and easily identifiable
 
-AC-113.5
+AC 5: Monitor Articles Tagged Per Type
 
-PharmaCo wants to add MHRA to their scope
+Given I am in Type Management screen
+When I view the summary table
+Then:
 
-Repo Admin edits instance, adds MHRA
+Each Type row shows Articles Tagged count (e.g., "Safety: 245 articles")
 
-Future MHRA articles appear in PharmaCo's queue; existing MHRA articles (if any in repo) do not backfill
+Counts reflect current state across all articles
 
-AC-113.6
-
-Client "BioTech Inc" has active articles in review
-
-Repo Admin attempts to delete instance
-
-Deletion blocked: "Cannot delete client with active articles. Set to Suspended or wait for completion."
-
-AC-113.7
-
-Repo Admin sets "BioTech Inc" to Suspended
-
-Status saved
-
-BioTech users can still access existing articles and complete reviews; no new articles routed to them
-
-AC-113.8
-
-Client instance created with Primary Client Admin email
-
-Instance activated
-
-Activation email sent to Client Admin with login instructions; Client Admin can access their scoped product layer
-
-AC-113.9
-
-Client instance has 2 Client Admins
-
-Repo Admin views instance
-
-Both admins listed; either can be removed (minimum 1 required)
-
-AC-113.10
-
-Repo Admin edits PharmaCo to remove FDA scope
-
-Warning displayed
-
-"PharmaCo has 45 FDA articles in progress. Removing FDA will not affect these articles but will stop new FDA articles."
-
-AC-113.11
-
-New client instance "MedDevice Ltd" created
-
-Client Admin configures teams
-
-Teams can only select from authorities enabled for that instance (FDA/EMA if that's what's scoped)
-
-AC-113.12
-
-Instance status changed
-
-Audit trail checked
-
-Entry shows: Repo Admin user, action, previous state, new state, timestamp
+Clicking count navigates to filtered article list for that Type
 
